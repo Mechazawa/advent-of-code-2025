@@ -13,5 +13,5 @@ pub fn handle(day: Day) {
     if let Err(e) = aoc_cli::read(day) {
         eprintln!("failed to call aoc-cli: {e}");
         process::exit(1);
-    };
+    }
 }

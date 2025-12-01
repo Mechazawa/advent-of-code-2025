@@ -58,9 +58,9 @@ pub fn download(day: Day) -> Result<Output, AocCommandError> {
         &[
             "--overwrite".into(),
             "--input-file".into(),
-            input_path.to_string(),
+            input_path.clone(),
             "--puzzle-file".into(),
-            puzzle_path.to_string(),
+            puzzle_path.clone(),
         ],
         day,
     );
