@@ -47,7 +47,7 @@ struct GridIter<'a> {
     y: usize,
 }
 
-impl<'a> Iterator for GridIter<'a> {
+impl Iterator for GridIter<'_> {
     type Item = (usize, usize, bool);
 
     fn next(&mut self) -> Option<Self::Item> {
