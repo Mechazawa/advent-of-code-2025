@@ -1,9 +1,12 @@
+use fancy_regex::Regex;
 use std::str::FromStr;
 
 advent_of_code::solution!(6);
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
+#[derive(Default)]
 enum Operation {
+    #[default]
     Add,
     Multiply,
 }
@@ -20,21 +23,15 @@ impl FromStr for Operation {
     }
 }
 
-impl Default for Operation {
-    fn default() -> Self {
-        Self::Add
-    }
-}
 
 impl Operation {
-    fn apply(&self, a: u64, b: u64) -> u64 {
+    fn apply(self, a: u64, b: u64) -> u64 {
         match self {
             Operation::Add => a + b,
             Operation::Multiply => a * b,
         }
     }
 }
-
 
 #[derive(Debug, Eq, PartialEq, Clone, Default)]
 struct Problem {
@@ -44,11 +41,31 @@ struct Problem {
 
 impl Problem {
     fn evaluate(&self) -> Option<u64> {
-        self.values.iter().copied().reduce(|a, b| self.operation.apply(a, b))
+        self.values
+            .iter()
+            .copied()
+            .reduce(|a, b| self.operation.apply(a, b))
     }
 }
 
-fn parse(input: &str) -> Vec<Problem> {
+#[derive(Debug, Eq, PartialEq, Clone, Default)]
+struct ProblemBuffer {
+    values: Vec<String>,
+    operation: Operation,
+    width: usize,
+}
+
+impl From<&ProblemBuffer> for Problem {
+    fn from(value: &ProblemBuffer) -> Self {
+        Self {
+            values: value.values.iter().map(|s| s.trim().parse().unwrap()).collect(),
+            operation: value.operation,
+        }
+    }
+}
+
+#[must_use]
+pub fn part_one(input: &str) -> Option<u64> {
     let mut problems = Vec::new();
 
     for line in input.lines() {
@@ -67,15 +84,43 @@ fn parse(input: &str) -> Vec<Problem> {
         }
     }
 
-    problems
+    problems.iter().map(Problem::evaluate).sum()
 }
 
-pub fn part_one(input: &str) -> Option<u64> {
-    parse(input).iter().map(|problem| problem.evaluate()).sum()
-}
-
+#[must_use]
 pub fn part_two(input: &str) -> Option<u64> {
-    None
+    let mut last_line = input.lines().last().map(ToString::to_string).unwrap_or_default();
+
+    last_line.push(' ');
+
+    let mut buffers = Regex::new(r"(\S)(\s+)")
+        .unwrap()
+        .captures_iter(&last_line)
+        .map(|mat| {
+            let mat = mat.unwrap();
+            let width = mat.get(2).unwrap().as_str().len() ;
+
+            ProblemBuffer {
+                values: vec![String::default(); width],
+                operation: Operation::from_str(mat.get(1).unwrap().as_str()).unwrap_or_default(),
+                // as_str is a bit slow for this case, I guess
+                width,
+            }
+        }).collect::<Vec<_>>();
+
+    for line in input.lines().take(input.lines().count() - 1) {
+        let mut chars = line.chars();
+
+        for buffer in &mut buffers {
+            for idx in 0..buffer.width{
+                buffer.values[idx].push(chars.next().unwrap());
+            }
+
+            chars.next();
+        }
+    }
+
+    buffers.iter().map(|buffer| Problem::from(buffer).evaluate()).sum()
 }
 
 #[cfg(test)]
@@ -91,6 +136,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(3263827));
     }
 }
