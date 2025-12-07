@@ -98,12 +98,11 @@ pub fn part_two(input: &str) -> Option<u64> {
         .captures_iter(&last_line)
         .map(|mat| {
             let mat = mat.unwrap();
-            let width = mat.get(2).unwrap().as_str().len() ;
+            let width = mat.get(2).unwrap().as_str().len();
 
             ProblemBuffer {
                 values: vec![String::default(); width],
                 operation: Operation::from_str(mat.get(1).unwrap().as_str()).unwrap_or_default(),
-                // as_str is a bit slow for this case, I guess
                 width,
             }
         }).collect::<Vec<_>>();
