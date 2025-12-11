@@ -44,13 +44,12 @@ impl From<&str> for Row {
     }
 }
 
-pub fn part_one(input: &str) -> Option<u64> {
-    let mut rows = input
-        .trim()
-        .lines()
-        .map(Row::from)
-        .collect::<Vec<_>>();
+fn parse_input(input: &str) -> Vec<Row> {
+    input.trim().lines().map(Row::from).collect()
+}
 
+pub fn part_one(input: &str) -> Option<u64> {
+    let mut rows = parse_input(input);
     let mut acc = (rows.remove(0), 0);
 
     for row in &rows {
@@ -79,6 +78,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(40));
     }
 }
