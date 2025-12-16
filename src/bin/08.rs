@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use itertools::Itertools;
 advent_of_code::solution!(8);
 
@@ -30,40 +31,37 @@ pub fn part_one(input: &str) -> Option<u64> {
     let sorted = coordinates
         .iter()
         .enumerate()
-        .permutations(2)
-        .map(|v| (v[0], v[1]))
+        .tuple_combinations()
         .map(|((ai, av), (bi, bv))| (av.distance_squared(*bv).to_bits(), ai, bi))
         .sorted_unstable_by_key(|(d, _, _)| *d)
         .map(|(_, a, b)| (a, b));
 
-    // The example input requires at most 10 iterations
-    let max_grouped = if input.lines().count() > 100 { 1000 } else { 10 };
-    let mut grouped = 0;
+    let max_attempts = if input.lines().count() > 100 { 1000 } else { 10 };
+    let mut attempts = 0;
 
     for (a, b) in sorted {
-        if grouped >= max_grouped {
+        attempts += 1;
+
+        if attempts > max_attempts {
             break;
         }
 
-        if let Some(parent_a) = find_parent(&mut parents, a)
-            && let Some(parent_b) = find_parent(&mut parents, b)
-            && parent_a != parent_b
-        {
-            grouped += 1;
+        let parent_a = find_parent(&mut parents, a)?;
+        let parent_b = find_parent(&mut parents, b)?;
+
+        if parent_a != parent_b {
             parents[parent_a] = parent_b;
         }
     }
 
-    Some(
-        parents
-            .iter()
-            .counts()
-            .iter()
-            .sorted_by_key(|(_, count)| usize::MAX - *count)
-            .take(3)
-            .map(|(_, count)| count)
-            .product::<usize>() as u64,
-    )
+    Some((0..coordinates.len())
+        .map(|i| find_parent(&mut parents, i))
+        .counts()
+        .iter()
+        .sorted_by_key(|(_, count)| usize::MAX - *count)
+        .take(3)
+        .map(|(_, count)| count)
+        .product::<usize>() as u64)
 }
 
 #[must_use]
