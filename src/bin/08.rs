@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use itertools::Itertools;
 advent_of_code::solution!(8);
 
@@ -6,6 +5,7 @@ type PVec = glam::Vec3;
 
 fn parse_input(input: &str) -> Vec<PVec> {
     input
+        .trim()
         .lines()
         .filter_map(|line| {
             line.split_terminator(',')

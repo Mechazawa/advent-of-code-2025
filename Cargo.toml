@@ -28,6 +28,7 @@ fancy-regex = "0.16.2"
 glam = "0.30.9"
 itertools = "0.14.0"
 pico-args = "0.5.0"
+rayon = "1.11.0"
 tinyjson = "2.5.1"
 
 # Solution dependencies
