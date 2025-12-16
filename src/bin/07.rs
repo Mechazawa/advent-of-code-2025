@@ -48,20 +48,22 @@ fn parse_input(input: &str) -> Vec<Row> {
     input.trim().lines().map(Row::from).collect()
 }
 
+#[must_use] 
 pub fn part_one(input: &str) -> Option<u64> {
     let mut rows = parse_input(input);
     let mut acc = (rows.remove(0), 0);
 
     for row in &rows {
-        let (row, splits) = acc.0.propagate(&row);
+        let (row, splits) = acc.0.propagate(row);
 
-        acc = (row, acc.1 + splits)
+        acc = (row, acc.1 + splits);
     }
 
     Some(acc.1)
 }
 
-pub fn part_two(input: &str) -> Option<u64> {
+#[must_use] 
+pub fn part_two(_input: &str) -> Option<u64> {
     None
 }
 
