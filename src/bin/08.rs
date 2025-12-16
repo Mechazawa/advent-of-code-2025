@@ -65,8 +65,30 @@ pub fn part_one(input: &str) -> Option<u64> {
 }
 
 #[must_use]
-pub fn part_two(_input: &str) -> Option<u64> {
-    None
+pub fn part_two(input: &str) -> Option<u64> {
+    let coordinates = parse_input(input);
+    let mut parents = (0..coordinates.len()).collect::<Vec<_>>();
+    let sorted = coordinates
+        .iter()
+        .enumerate()
+        .tuple_combinations()
+        .map(|((ai, av), (bi, bv))| (av.distance_squared(*bv).to_bits(), ai, bi))
+        .sorted_unstable_by_key(|(d, _, _)| *d)
+        .map(|(_, a, b)| (a, b));
+
+    let mut last = (0,0);
+
+    for (a, b) in sorted {
+        let parent_a = find_parent(&mut parents, a)?;
+        let parent_b = find_parent(&mut parents, b)?;
+
+        if parent_a != parent_b {
+            last = (a, b);
+            parents[parent_a] = parent_b;
+        }
+    }
+
+    Some((coordinates[last.0].x as u64) * (coordinates[last.1].x as u64))
 }
 
 #[cfg(test)]
