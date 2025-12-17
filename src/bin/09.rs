@@ -32,8 +32,6 @@ pub fn part_one(input: &str) -> Option<u64> {
 pub fn part_two(input: &str) -> Option<u64> {
     let positions = parse_input(input);
 
-    println!("{positions:?}");
-
     positions
         .iter()
         .enumerate()
@@ -48,12 +46,11 @@ pub fn part_two(input: &str) -> Option<u64> {
                 .enumerate()
                 .filter(|(i, _)| ai != i && bi != i)
                 .any(|(_, p)| {
-                    ((p.x > sv.x && p.y >= sv.y) || (p.x >= sv.x && p.y > sv.y))
-                        && ((p.x < lv.x && p.y <= lv.y) || (p.x <= lv.x && p.y < lv.y))
+                    p.x >= sv.x && p.x <= lv.x && p.y >= sv.y && p.y <= lv.y
+                        && !((p.x == sv.x || p.x == lv.x) && (p.y == sv.y || p.y == lv.y))
                 })
         })
-        // .map(|(v, _, _, _)| v)
-        .map(|(v, a, b, (ai, bi))| {println!("{a:?} {b:?}"); println!("{:?} {:?}", positions[ai], positions[bi]); v})
+        .map(|(v, _, _, _)| v)
 }
 
 #[cfg(test)]
