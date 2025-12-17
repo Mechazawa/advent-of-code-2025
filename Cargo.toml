@@ -25,6 +25,7 @@ test_lib = []
 chrono = { version = "0.4.38", optional = true }
 dhat = { version = "0.3.3", optional = true }
 fancy-regex = "0.16.2"
+geo = "0.32.0"
 glam = "0.30.9"
 itertools = "0.14.0"
 pico-args = "0.5.0"

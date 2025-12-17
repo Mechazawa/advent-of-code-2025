@@ -1,8 +1,10 @@
 use itertools::Itertools;
+use geo::{Rect, Polygon, LineString, Contains, coord};
+use rayon::prelude::{ParallelBridge, ParallelIterator};
 
 advent_of_code::solution!(9);
 
-type PVec = glam::U64Vec2;
+type PVec = geo::Coord<u64>;
 
 fn parse_input(input: &str) -> Vec<PVec> {
     input
@@ -17,40 +19,42 @@ fn parse_input(input: &str) -> Vec<PVec> {
         .collect::<Vec<_>>()
 }
 
+#[must_use]
 pub fn part_one(input: &str) -> Option<u64> {
     Some(
         parse_input(input)
             .iter()
             .tuple_combinations()
-            .map(|(a, b)| a.max(*b) - a.min(*b))
-            .map(|v| (1 + v.x) * (1 + v.y))
+            .map(|(a, b)| Rect::new(*a, *b))
+            .map(|r| (r.width() + 1) * (r.height() + 1))
             .max()
             .unwrap_or_default(),
     )
 }
 
+#[must_use]
 pub fn part_two(input: &str) -> Option<u64> {
     let positions = parse_input(input);
+    let polygon: Polygon<f64> = Polygon::new(
+        LineString::from(positions.iter().copied().map(|c| coord!{x: c.x as f64, y: c.y as f64}).collect::<Vec<_>>()),
+        vec![]
+    );
 
     positions
         .iter()
         .enumerate()
         .tuple_combinations()
-        .map(|((ai, av), (bi, bv))| (av.min(*bv), av.max(*bv), (ai, bi)))
-        .map(|(sv, lv, idx)| (lv - sv, sv, lv, idx))
-        .map(|(v, sv, lv, idx)| ((1 + v.x) * (1 + v.y), sv, lv, idx))
-        .sorted_by_key(|(v, _, _, _)| u64::MAX - *v)
-        .find(|(_, sv, lv, (ai, bi))| {
-            !positions
-                .iter()
-                .enumerate()
-                .filter(|(i, _)| ai != i && bi != i)
-                .any(|(_, p)| {
-                    p.x >= sv.x && p.x <= lv.x && p.y >= sv.y && p.y <= lv.y
-                        && !((p.x == sv.x || p.x == lv.x) && (p.y == sv.y || p.y == lv.y))
-                })
+        .par_bridge()
+        .map(|((ai, av), (bi, bv))| (Rect::new(*av, *bv), (ai, bi)))
+        .map(|(r, i)| ((r.width() + 1) * (r.height() + 1), r, i))
+        .filter(|(_, r, _)| {
+            polygon.contains(&Rect::new(
+                coord! {x: r.min().x as f64, y: r.min().y as f64},
+                coord! {x: r.max().x as f64, y: r.max().y as f64},
+            ))
         })
-        .map(|(v, _, _, _)| v)
+        .map(|(v, _, _)| v)
+        .max()
 }
 
 #[cfg(test)]
