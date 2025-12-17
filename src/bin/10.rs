@@ -1,4 +1,27 @@
+use fancy_regex::Regex;
+
 advent_of_code::solution!(10);
+
+struct Indicator(Vec<bool>);
+struct WiringSchematic(Vec<u16>);
+struct Joltage(Vec<u16>);
+
+struct Machine {
+    indicator: Indicator,
+    wiring_schematic: WiringSchematic,
+    joltage: Joltage,
+}
+
+fn parse_input(input: &str) -> Vec<Machine> {
+    input
+        .trim()
+        .lines()
+        .map(|l| Machine {
+            // @todo this sucks
+            indicator: Indicator(Regex::new(r"(?m)\[([.#]+)\]").unwrap().captures(l).unwrap().unwrap().get(1).unwrap().as_str().chars().map(|c| c == '#').collect()),
+        })
+        .collect()
+}
 
 pub fn part_one(input: &str) -> Option<u64> {
     None
