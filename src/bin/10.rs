@@ -1,11 +1,13 @@
-use std::collections::{HashMap, HashSet, VecDeque};
-use rayon::iter::ParallelIterator;
-use std::fmt::{Display, Formatter};
+use std::cmp::{Ordering, Reverse};
 use anyhow::Context;
 use fancy_regex::Regex;
 use itertools::Itertools;
-use std::str::FromStr;
+use rayon::iter::ParallelIterator;
 use rayon::prelude::IntoParallelRefIterator;
+use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
+use std::fmt::{Display, Formatter};
+use std::hash::Hash;
+use std::str::FromStr;
 
 advent_of_code::solution!(10);
 
@@ -89,10 +91,10 @@ impl FromStr for Joltage {
 }
 
 impl WiringSchematic {
-    fn as_vec(&self) -> Vec<bool> {
+    fn indexes(&self) -> Vec<usize> {
         (0..16)
-            .map(|i| self.0 & (1 << i) != 0)
-            .collect::<Vec<_>>()
+            .filter(|i| self.0 & (1u16 << i) != 0)
+            .collect()
     }
 }
 
@@ -140,32 +142,46 @@ struct MachineWiringSolver {
     used: WiringSchematicCollection,
 }
 
-struct MachineJoltageSolver {
-    stack: VecDeque<(usize, Joltage)>,
-    available: WiringSchematicCollection,
-}
-
 impl Joltage {
     fn wire(&self, wire: &WiringSchematic) -> Result<Self, anyhow::Error> {
-        let output = self.clone();
+        let mut output = self.clone();
 
-        let indexes = wire
-            .as_vec()
-            .iter()
-            .enumerate()
-            .filter(|(_, v)| **v)
-            .map(|(i, _)| i)
-            .collect::<Vec<usize>>();
+        for index in wire.indexes() {
+            let mut value = output.0.get_mut(index).context("Joltage list overflow")?;
 
-        for index in indexes {
-            output.0
-                .get(index)
-                .context("Joltage list overflow")?
-                .checked_sub(1)
-                .context("Joltage underflow")?;
+           *value = value.checked_sub(1).context("Joltage underflow")?;
         }
 
         Ok(output)
+    }
+}
+
+#[derive(Debug, Eq, Clone)]
+struct JoltageSolveStep(usize, Joltage, u8);
+
+impl PartialEq<Self> for JoltageSolveStep {
+    fn eq(&self, other: &Self) -> bool {
+         self.0 == other.0 && self.1 == other.1
+    }
+}
+
+impl PartialOrd<Self> for JoltageSolveStep {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.2.partial_cmp(&other.2).map(|v|v.reverse())
+    }
+}
+
+impl Ord for JoltageSolveStep {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.2.cmp(&other.2).reverse()
+    }
+}
+
+impl JoltageSolveStep {
+    fn new(steps: usize, joltage: Joltage) -> Self {
+        let remaining = joltage.0.iter().sum();
+
+        Self(steps, joltage, remaining)
     }
 }
 
@@ -179,32 +195,50 @@ impl Machine {
     }
 
     fn joltage_solver(&self) -> Option<usize> {
-        let mut stack = VecDeque::from([ (0, self.joltage.clone())]);
-        let mut cache: HashSet<(usize, Joltage)> = HashSet::new();
+        let mut heap = BinaryHeap::new();
+        let mut cache: HashMap<Joltage, JoltageSolveStep> = HashMap::new();
         let mut min_steps: Option<usize> = None;
 
-        for (steps, joltage) in &mut stack {
-            if joltage.0.iter().all(|v| *v == 0) {
-                min_steps = Some(min_steps.map_or(*steps, |min| min.min(*steps)));
+        heap.push(JoltageSolveStep::new(0, self.joltage.clone()));
 
+        println!("{:?}", self.joltage);
+
+        while let Some(JoltageSolveStep(steps, joltage, remaining)) = heap.pop() {
+            if remaining == 0 {
+                min_steps = Some(min_steps.map_or(steps, |min| min.min(steps)));
+
+                println!("{:5} -> {:3} -> {:?}", heap.len(), steps, joltage);
                 continue;
             }
 
-            let steps = *steps + 1;
+            let next_steps = steps + 1;
+            // println!("{:5} -> {:3} -> {:?}", heap.len(), steps, joltage);
 
-            if let Some(min) = min_steps && steps > min  {
-                continue;
+            if let Some(min) = min_steps {
+                if next_steps > min {
+                    continue;
+                }
             }
 
-            let next: Vec<(usize, Joltage)> = self.wiring_schematics.0.iter()
-                .filter_map(|wiring| joltage.wire(wiring).ok())
-                .map(|joltage| (steps, joltage))
-                .filter(|key| !cache.contains(key))
-                .collect();
+            for wiring in self.wiring_schematics.0.iter() {
+                let next_joltage = joltage.wire(wiring);
 
-            for (steps, joltage) in next {
-                cache.insert((steps, joltage.clone()));
-                stack.push_back((steps, joltage));
+                if next_joltage.is_err() {
+                    continue;
+                }
+
+                let next_joltage = next_joltage.unwrap();
+
+                if let Some(JoltageSolveStep(depth, _, _)) = cache.get(&next_joltage) {
+                    if *depth <= next_steps {
+                        continue;
+                    }
+                }
+
+                let next = JoltageSolveStep::new(next_steps, next_joltage.clone());
+
+                cache.insert(next_joltage, next.clone());
+                heap.push(next);
             }
         }
 
@@ -288,7 +322,7 @@ pub fn part_one(input: &str) -> Option<u64> {
 #[must_use]
 pub fn part_two(input: &str) -> Option<u64> {
     Some(parse_input(input)
-        .par_iter()
+        .iter()
         .filter_map(Machine::joltage_solver)
         .sum::<usize>() as u64)
 }
