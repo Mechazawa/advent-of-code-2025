@@ -1,11 +1,10 @@
 use rayon::iter::ParallelIterator;
 use std::fmt::{Display, Formatter};
-use anyhow::__private::kind::TraitKind;
 use anyhow::Context;
 use fancy_regex::Regex;
 use itertools::Itertools;
 use std::str::FromStr;
-use rayon::prelude::{IntoParallelRefIterator, ParallelBridge};
+use rayon::prelude::IntoParallelRefIterator;
 
 advent_of_code::solution!(10);
 
@@ -102,7 +101,7 @@ impl FromStr for WiringSchematicCollection {
             Regex::new(r"\(([0-9,]+)\)")
                 .context("Failed to compile regex")?
                 .captures_iter(s)
-                .filter_map(|c| c.ok())
+                .filter_map(Result::ok)
                 .filter_map(|c| c.get(1))
                 .map(|c| {
                     c.as_str()
@@ -167,7 +166,7 @@ impl Display for MachineButtonSolver {
         write!(f, "[{}]", self.state);
 
         for available in &self.available.0 {
-            write!(f, " ({})", available)?;
+            write!(f, " ({available})")?;
         }
 
         Ok(())
@@ -210,15 +209,17 @@ fn parse_input(input: &str) -> Vec<Machine> {
         .collect()
 }
 
+#[must_use]
 pub fn part_one(input: &str) -> Option<u64> {
     Some(parse_input(input)
         .par_iter()
-        .map(|m| m.build_solver())
-        .map(|s| s.shortest().map(|v| v.0.len()).unwrap_or_default() as u64)
+        .map(Machine::build_solver)
+        .map(|s| s.shortest().map_or(0, |v| v.0.len()) as u64)
         .sum())
 }
 
-pub fn part_two(input: &str) -> Option<u64> {
+#[must_use]
+pub fn part_two(_input: &str) -> Option<u64> {
     None
 }
 
