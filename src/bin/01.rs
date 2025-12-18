@@ -42,7 +42,7 @@ pub fn part_two(input: &str) -> Option<u64> {
                     (from - 1).div_euclid(100) - (to - 1).div_euclid(100)
                 }
             })
-            .sum::<i64>().cast_unsigned(),
+            .sum::<i64>().cast_unsigned()Indicator,
     )
 }
 

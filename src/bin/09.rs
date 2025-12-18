@@ -42,18 +42,16 @@ pub fn part_two(input: &str) -> Option<u64> {
 
     positions
         .iter()
-        .enumerate()
         .tuple_combinations()
         .par_bridge()
-        .map(|((ai, av), (bi, bv))| (Rect::new(*av, *bv), (ai, bi)))
-        .map(|(r, i)| ((r.width() + 1) * (r.height() + 1), r, i))
-        .filter(|(_, r, _)| {
+        .map(|(a, b)| Rect::new(*a, *b))
+        .filter(|r| {
             polygon.contains(&Rect::new(
                 coord! {x: r.min().x as f64, y: r.min().y as f64},
                 coord! {x: r.max().x as f64, y: r.max().y as f64},
             ))
         })
-        .map(|(v, _, _)| v)
+        .map(|r| (r.width() + 1) * (r.height() + 1))
         .max()
 }
 
