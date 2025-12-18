@@ -321,10 +321,11 @@ pub fn part_one(input: &str) -> Option<u64> {
 
 #[must_use]
 pub fn part_two(input: &str) -> Option<u64> {
-    Some(parse_input(input)
-        .iter()
-        .filter_map(Machine::joltage_solver)
-        .sum::<usize>() as u64)
+    None
+    // Some(parse_input(input)
+    //     .iter()
+    //     .filter_map(Machine::joltage_solver)
+    //     .sum::<usize>() as u64)
 }
 
 #[cfg(test)]
