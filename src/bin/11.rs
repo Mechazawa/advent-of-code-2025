@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use anyhow::Context;
 
 advent_of_code::solution!(11);
@@ -76,7 +76,18 @@ pub fn part_one(input: &str) -> Option<u64> {
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
-    None
+    let input = parse_input(input);
+    println!("Searching for paths from svr to out");
+    let paths = input.paths(&parse_name("svr"), &parse_name("out"));
+
+    let name_fft = parse_name("fft");
+    let name_dac = parse_name("dac");
+
+    println!("Found {} paths", paths.len());
+    println!("Filtering paths containing fft and not containing dac");
+    Some(paths.iter()
+        .filter(|path| path.contains(&name_fft) && path.contains(&name_dac))
+        .count() as u64)
 }
 
 #[cfg(test)]
@@ -85,13 +96,13 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        let result = part_one(&advent_of_code::template::read_file("examples", DAY));
+        let result = part_one(&advent_of_code::template::read_file_part("examples", DAY, 1));
         assert_eq!(result, Some(5));
     }
 
     #[test]
     fn test_part_two() {
-        let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        let result = part_two(&advent_of_code::template::read_file_part("examples", DAY, 2));
+        assert_eq!(result, Some(2));
     }
 }
