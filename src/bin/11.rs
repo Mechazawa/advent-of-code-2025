@@ -10,7 +10,7 @@ type DevicePath = Vec<DeviceName>;
 const UNKNOWN_DEVICE: DeviceName = ['?'; 3];
 
 impl DeviceMap {
-    fn paths(&self, start: &DeviceName, end: &DeviceName) -> Vec<DevicePath> {
+    fn paths(&self, start: &DeviceName, end: &DeviceName, filter: fn(DevicePath) -> bool) -> Vec<DevicePath> {
         let mut output = vec![];
         let mut stacks = self.0.get(start)
             .map(|v| v
@@ -24,7 +24,9 @@ impl DeviceMap {
             let last = stack.last().unwrap_or(&UNKNOWN_DEVICE);
 
            if last == end {
-               output.push(stack);
+               if filter(stack.clone()) {
+                   output.push(stack);
+               }
            } else {
                for target_item in self.0.get(last).unwrap_or(&vec![]).iter() {
                    if !stack.contains(target_item) {
@@ -72,22 +74,22 @@ fn parse_input(input: &str) -> DeviceMap {
 pub fn part_one(input: &str) -> Option<u64> {
     let input = parse_input(input);
 
-    Some(input.paths(&parse_name("you"), &parse_name("out")).len() as u64)
+    Some(input.paths(&parse_name("you"), &parse_name("out"), |_| true).len() as u64)
 }
+
+const NAME_FFT: DeviceName = ['f', 'f' , 't'];
+const NAME_DAC: DeviceName = ['d', 'a', 'c'];
 
 pub fn part_two(input: &str) -> Option<u64> {
     let input = parse_input(input);
     println!("Searching for paths from svr to out");
-    let paths = input.paths(&parse_name("svr"), &parse_name("out"));
+    let paths = input.paths(
+        &parse_name("svr"),
+        &parse_name("out"),
+        |path| path.contains(&NAME_FFT) && path.contains(&NAME_DAC)
+    );
 
-    let name_fft = parse_name("fft");
-    let name_dac = parse_name("dac");
-
-    println!("Found {} paths", paths.len());
-    println!("Filtering paths containing fft and not containing dac");
-    Some(paths.iter()
-        .filter(|path| path.contains(&name_fft) && path.contains(&name_dac))
-        .count() as u64)
+    Some(paths.len() as u64)
 }
 
 #[cfg(test)]
