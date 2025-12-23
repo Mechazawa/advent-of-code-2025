@@ -28,6 +28,7 @@ dependencies = [
  "geo",
  "glam",
  "itertools 0.14.0",
+ "log",
  "pico-args",
  "rayon",
  "tinyjson",
