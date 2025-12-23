@@ -1,46 +1,44 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use anyhow::Context;
 
 advent_of_code::solution!(11);
 
 type DeviceName = [char; 3];
-struct DeviceMap(BTreeMap<DeviceName, Vec<DeviceName>>);
+struct DeviceMap {
+    graph: BTreeMap<DeviceName, Vec<DeviceName>>,
+    cache: HashMap<(DeviceName, DeviceName), usize>,
+}
+
 type DevicePath = Vec<DeviceName>;
 
 const UNKNOWN_DEVICE: DeviceName = ['?'; 3];
 
 impl DeviceMap {
-    fn paths(&self, start: &DeviceName, end: &DeviceName, filter: fn(DevicePath) -> bool) -> Vec<DevicePath> {
-        let mut output = vec![];
-        let mut stacks = self.0.get(start)
-            .map(|v| v
-                .iter()
-                .copied()
-                .map(|e| vec![e])
-                .collect::<Vec<DevicePath>>())
-            .unwrap_or_default();
+    fn new(graph: BTreeMap<DeviceName, Vec<DeviceName>>) -> Self {
+        Self { graph, cache: HashMap::new() }
+    }
 
-       while let Some(stack) = stacks.pop() {
-            let last = stack.last().unwrap_or(&UNKNOWN_DEVICE);
+    fn count_paths(
+        &mut self,
+        start: DeviceName,
+        end: DeviceName,
+    ) -> usize {
+        if start == end {
+            return 1;
+        }
+        if let Some(&count) = self.cache.get(&(start, end)) {
+            return count;
+        }
 
-           if last == end {
-               if filter(stack.clone()) {
-                   output.push(stack);
-               }
-           } else {
-               for target_item in self.0.get(last).unwrap_or(&vec![]).iter() {
-                   if !stack.contains(target_item) {
-                       let mut new_stack = stack.clone();
+        let mut total = 0;
+        if let Some(neighbors) = self.graph.get(&start).cloned() {
+            for neighbor in neighbors {
+                total += self.count_paths(neighbor, end);
+            }
+        }
 
-                       new_stack.push(*target_item);
-
-                       stacks.push(new_stack);
-                   }
-               }
-           }
-       }
-
-        output
+        self.cache.insert((start, end), total);
+        total
     }
 }
 
@@ -55,7 +53,7 @@ fn parse_name(input: &str) -> DeviceName {
 }
 
 fn parse_input(input: &str) -> DeviceMap {
-    DeviceMap(input
+    DeviceMap::new(input
         .trim()
         .lines()
         .filter_map(|line| line.split_once(":"))
@@ -71,25 +69,35 @@ fn parse_input(input: &str) -> DeviceMap {
         .collect())
 }
 
-pub fn part_one(input: &str) -> Option<u64> {
-    let input = parse_input(input);
+pub fn part_one(input: &str) -> Option<usize> {
+    let mut input = parse_input(input);
 
-    Some(input.paths(&parse_name("you"), &parse_name("out"), |_| true).len() as u64)
+    let you = parse_name("you");
+    let out = parse_name("out");
+
+    Some(input.count_paths(you, out))
 }
 
-const NAME_FFT: DeviceName = ['f', 'f' , 't'];
-const NAME_DAC: DeviceName = ['d', 'a', 'c'];
+pub fn part_two(input: &str) -> Option<usize> {
+    let mut input = parse_input(input);
 
-pub fn part_two(input: &str) -> Option<u64> {
-    let input = parse_input(input);
-    println!("Searching for paths from svr to out");
-    let paths = input.paths(
-        &parse_name("svr"),
-        &parse_name("out"),
-        |path| path.contains(&NAME_FFT) && path.contains(&NAME_DAC)
-    );
+    let svr = parse_name("svr");
+    let fft = parse_name("fft");
+    let dac = parse_name("dac");
+    let out = parse_name("out");
 
-    Some(paths.len() as u64)
+    let srv_fft = input.count_paths(svr, fft);
+    let fft_dac = input.count_paths(fft, dac);
+    let dac_out = input.count_paths(dac, out);
+
+    let srv_dac = input.count_paths(svr, dac);
+    let dac_fft = input.count_paths(dac, fft);
+    let fft_out = input.count_paths(fft, out);
+
+    let direction1 = srv_fft * fft_dac * dac_out;
+    let direction2 = srv_dac * dac_fft * fft_out;
+
+    Some(direction1 + direction2)
 }
 
 #[cfg(test)]
