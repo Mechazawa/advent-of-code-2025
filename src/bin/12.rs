@@ -1,10 +1,12 @@
 advent_of_code::solution!(12);
 
-pub fn part_one(input: &str) -> Option<u64> {
+#[must_use] 
+pub fn part_one(_input: &str) -> Option<u64> {
     None
 }
 
-pub fn part_two(input: &str) -> Option<u64> {
+#[must_use] 
+pub fn part_two(_input: &str) -> Option<u64> {
     None
 }
 

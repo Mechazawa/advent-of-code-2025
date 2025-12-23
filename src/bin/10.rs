@@ -1,10 +1,10 @@
-use std::cmp::{Ordering, Reverse};
+use std::cmp::Ordering;
 use anyhow::Context;
 use fancy_regex::Regex;
 use itertools::Itertools;
 use rayon::iter::ParallelIterator;
 use rayon::prelude::IntoParallelRefIterator;
-use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
+use std::collections::{BinaryHeap, HashMap};
 use std::fmt::{Display, Formatter};
 use std::hash::Hash;
 use std::str::FromStr;
@@ -147,7 +147,7 @@ impl Joltage {
         let mut output = self.clone();
 
         for index in wire.indexes() {
-            let mut value = output.0.get_mut(index).context("Joltage list overflow")?;
+            let value = output.0.get_mut(index).context("Joltage list overflow")?;
 
            *value = value.checked_sub(1).context("Joltage underflow")?;
         }
@@ -167,7 +167,7 @@ impl PartialEq<Self> for JoltageSolveStep {
 
 impl PartialOrd<Self> for JoltageSolveStep {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.2.partial_cmp(&other.2).map(|v|v.reverse())
+        self.2.partial_cmp(&other.2).map(std::cmp::Ordering::reverse)
     }
 }
 
@@ -214,13 +214,12 @@ impl Machine {
             let next_steps = steps + 1;
             // println!("{:5} -> {:3} -> {:?}", heap.len(), steps, joltage);
 
-            if let Some(min) = min_steps {
-                if next_steps > min {
+            if let Some(min) = min_steps
+                && next_steps > min {
                     continue;
                 }
-            }
 
-            for wiring in self.wiring_schematics.0.iter() {
+            for wiring in &self.wiring_schematics.0 {
                 let next_joltage = joltage.wire(wiring);
 
                 if next_joltage.is_err() {
@@ -229,11 +228,10 @@ impl Machine {
 
                 let next_joltage = next_joltage.unwrap();
 
-                if let Some(JoltageSolveStep(depth, _, _)) = cache.get(&next_joltage) {
-                    if *depth <= next_steps {
+                if let Some(JoltageSolveStep(depth, _, _)) = cache.get(&next_joltage)
+                    && *depth <= next_steps {
                         continue;
                     }
-                }
 
                 let next = JoltageSolveStep::new(next_steps, next_joltage.clone());
 
@@ -320,7 +318,7 @@ pub fn part_one(input: &str) -> Option<u64> {
 }
 
 #[must_use]
-pub fn part_two(input: &str) -> Option<u64> {
+pub fn part_two(_input: &str) -> Option<u64> {
     None
     // Some(parse_input(input)
     //     .iter()

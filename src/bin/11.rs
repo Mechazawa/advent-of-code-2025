@@ -1,5 +1,4 @@
 use std::collections::{BTreeMap, HashMap};
-use anyhow::Context;
 
 advent_of_code::solution!(11);
 
@@ -8,8 +7,6 @@ struct DeviceMap {
     graph: BTreeMap<DeviceName, Vec<DeviceName>>,
     cache: HashMap<(DeviceName, DeviceName), usize>,
 }
-
-type DevicePath = Vec<DeviceName>;
 
 const UNKNOWN_DEVICE: DeviceName = ['?'; 3];
 
@@ -43,7 +40,7 @@ impl DeviceMap {
 }
 
 fn parse_name(input: &str) -> DeviceName {
-    let mut output = UNKNOWN_DEVICE.clone();
+    let mut output = UNKNOWN_DEVICE;
 
     for (i, c) in input.chars().take(3).enumerate() {
         output[i] = c;
@@ -56,10 +53,9 @@ fn parse_input(input: &str) -> DeviceMap {
     DeviceMap::new(input
         .trim()
         .lines()
-        .filter_map(|line| line.split_once(":"))
+        .filter_map(|line| line.split_once(':'))
         .map(|(device, connections)| {
             let connections = connections
-                .trim()
                 .split_whitespace()
                 .map(parse_name)
                 .collect();
@@ -69,6 +65,7 @@ fn parse_input(input: &str) -> DeviceMap {
         .collect())
 }
 
+#[must_use] 
 pub fn part_one(input: &str) -> Option<usize> {
     let mut input = parse_input(input);
 
@@ -78,6 +75,7 @@ pub fn part_one(input: &str) -> Option<usize> {
     Some(input.count_paths(you, out))
 }
 
+#[must_use] 
 pub fn part_two(input: &str) -> Option<usize> {
     let mut input = parse_input(input);
 
